@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>无尽冬日打熊编队计算</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:#dcecff;background:linear-gradient(180deg,#06131f 0%,#0a1e33 45%,#081726 100%);min-height:100vh;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(120% 60% at 50% -10%,rgba(94,179,255,.18),transparent 60%),
+             radial-gradient(80% 50% at 90% 100%,rgba(168,216,255,.08),transparent 70%);}
+.snow{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
+.flake{position:absolute;top:-6vh;border-radius:50%;background:#cfeaff;box-shadow:0 0 6px rgba(168,216,255,.8);
+  animation:fall linear infinite;}
+@keyframes fall{0%{transform:translate3d(0,-6vh,0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}
+  100%{transform:translate3d(var(--dx),108vh,0);opacity:0}}
+.wrap{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:14px 12px 26px;}
+header{text-align:center;padding:8px 0 14px;}
+h1{margin:0;font-size:21px;letter-spacing:1px;font-weight:800;
+  background:linear-gradient(92deg,#ffffff 0%,#a8d8ff 48%,#ffd27a 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.sign{margin-top:6px;font-size:12px;color:#ffd27a;letter-spacing:1px;}
+.card{background:rgba(16,36,60,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(94,179,255,.28);border-radius:14px;padding:12px;margin-bottom:12px;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);}
+.ttl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#a8d8ff;margin-bottom:10px;}
+.ttl i{width:6px;height:6px;border-radius:50%;background:#5eb3ff;box-shadow:0 0 8px #5eb3ff;font-style:normal;}
+.ttl small{margin-left:auto;font-weight:400;font-size:11px;color:#7fa8c9;}
+textarea,input[type=number],input[type=text]{width:100%;border:1px solid rgba(94,179,255,.3);border-radius:10px;
+  background:rgba(94,179,255,.10);color:#eaf6ff;font-size:14px;padding:9px 10px;outline:none;transition:.2s;}
+textarea{min-height:104px;resize:vertical;font-size:12.5px;line-height:1.5;}
+input:focus,textarea:focus{border-color:#5eb3ff;box-shadow:0 0 0 3px rgba(94,179,255,.22);background:rgba(94,179,255,.16);}
+input[type=number]{-moz-appearance:textfield;}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.fld label{display:block;font-size:11px;color:#8fb6d6;margin-bottom:4px;}
+.tip{margin-top:8px;font-size:11.5px;color:#9fd2ff;line-height:1.6;}
+.tip b{color:#ffd27a;font-weight:700;}
+.ok{color:#7ef0c8;} .bad{color:#ff9aa8;}
+/* 合并栏：左识别 / 右兵力 */
+.merge{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.merge .col{min-width:0;}
+.merge .col h4{margin:0 0 7px;font-size:12px;font-weight:700;color:#a8d8ff;display:flex;align-items:center;gap:5px;}
+.merge .col h4 i{width:5px;height:5px;border-radius:50%;background:#5eb3ff;box-shadow:0 0 6px #5eb3ff;font-style:normal;}
+.merge .col.right{border-left:1px dashed rgba(94,179,255,.28);padding-left:12px;}
+.merge .col.right .fld{margin-bottom:7px;}
+.merge .col.right .fld:last-child{margin-bottom:0;}
+.merge .col.right input{padding:7px 9px;font-size:13.5px;}
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{flex:1 1 auto;min-width:64px;text-align:center;font-size:12.5px;padding:8px 6px;border-radius:10px;cursor:pointer;
+  border:1px solid rgba(94,179,255,.3);background:rgba(94,179,255,.08);color:#bcdcf5;transition:.2s;user-select:none;}
+.chip.on{border-color:#5eb3ff;background:rgba(94,179,255,.24);color:#fff;box-shadow:0 0 10px rgba(94,179,255,.25);}
+.chip input{display:none;}
+.box{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.mini{border:1px dashed rgba(94,179,255,.35);border-radius:10px;padding:8px;background:rgba(94,179,255,.06);}
+.mini .k{font-size:11px;color:#8fb6d6;}
+.mini .v{font-size:16px;font-weight:800;color:#a8d8ff;margin-top:2px;}
+.mini .s{font-size:11px;color:#9fc6e2;margin-top:3px;line-height:1.5;}
+/* ===== 打熊编队汇总表 ===== */
+.legend{display:flex;flex-wrap:wrap;gap:9px 12px;font-size:11px;color:#9fc6e2;margin-bottom:9px;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend em{width:10px;height:10px;border-radius:3px;font-style:normal;display:inline-block;}
+.legend .lfh{background:rgba(45,212,191,.8);box-shadow:0 0 6px rgba(45,212,191,.55);}
+.legend .lfp{background:rgba(255,210,122,.85);box-shadow:0 0 6px rgba(255,210,122,.5);}
+.legend .lph{background:rgba(255,143,174,.85);box-shadow:0 0 6px rgba(255,143,174,.45);}
+.legend .lpp{background:rgba(169,182,255,.85);box-shadow:0 0 6px rgba(169,182,255,.45);}
+.legend .ln{background:rgba(140,165,190,.4);}
+.bearRow{display:flex;gap:7px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;}
+.bearRow::-webkit-scrollbar{height:5px;}
+.bearRow::-webkit-scrollbar-thumb{background:rgba(94,179,255,.35);border-radius:5px;}
+.bear{flex:1 0 80px;min-width:80px;border-radius:12px;padding:9px 5px 8px;text-align:center;border:1px solid;
+  scroll-snap-align:start;position:relative;transition:.2s;}
+.bear .bn{font-size:12.5px;font-weight:800;letter-spacing:1px;margin-bottom:6px;}
+.bear .bl{display:flex;justify-content:space-between;font-size:10.5px;color:#9fc6e2;line-height:1.8;padding:0 2px;}
+.bear .bl b{font-size:12px;color:#fff;font-weight:700;}
+.bear .bar{height:4px;border-radius:4px;background:rgba(255,255,255,.12);margin:7px 2px 6px;overflow:hidden;}
+.bear .bar i{display:block;height:100%;border-radius:4px;}
+.bear .bt{font-size:11px;font-weight:700;}
+.bear .bg{position:absolute;top:5px;right:5px;font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:6px;}
+.bear .bg.hero{color:#a8d8ff;border:1px solid rgba(168,216,255,.55);background:rgba(94,179,255,.20);}
+.bear .bg.pure{color:#ffd27a;border:1px solid rgba(255,210,122,.55);background:rgba(255,210,122,.16);}
+.bear.fh{background:linear-gradient(165deg,rgba(45,212,191,.24),rgba(45,212,191,.05));
+  border-color:rgba(45,212,191,.62);box-shadow:0 0 12px rgba(45,212,191,.16);}
+.bear.fh .bn{color:#5ef0cf;} .bear.fh .bt{color:#7ef0c8;}
+.bear.fh .bar i{background:linear-gradient(90deg,#2dd4bf,#7ef0c8);}
+.bear.fp{background:linear-gradient(165deg,rgba(255,210,122,.22),rgba(255,210,122,.04));
+  border-color:rgba(255,210,122,.62);box-shadow:0 0 12px rgba(255,210,122,.16);}
+.bear.fp .bn{color:#ffd27a;} .bear.fp .bt{color:#ffd27a;}
+.bear.fp .bar i{background:linear-gradient(90deg,#ffc36a,#ffe6b0);}
+.bear.ph{background:linear-gradient(165deg,rgba(255,143,174,.22),rgba(255,92,138,.05));
+  border-color:rgba(255,143,174,.62);box-shadow:0 0 12px rgba(255,143,174,.16);}
+.bear.ph .bn{color:#ff8fae;} .bear.ph .bt{color:#ff9aa8;}
+.bear.ph .bar i{background:linear-gradient(90deg,#ff5c8a,#ff8fae);}
+.bear.pp{background:linear-gradient(165deg,rgba(169,182,255,.22),rgba(124,140,255,.05));
+  border-color:rgba(169,182,255,.62);box-shadow:0 0 12px rgba(169,182,255,.16);}
+.bear.pp .bn{color:#a9b6ff;} .bear.pp .bt{color:#b9c4ff;}
+.bear.pp .bar i{background:linear-gradient(90deg,#7c8cff,#a9b6ff);}
+.bear.none{background:rgba(255,255,255,.04);border-color:rgba(130,160,185,.3);opacity:.6;}
+.bear.none .bn{color:#8ea9bf;} .bear.none .bt{color:#8ea9bf;}
+.bear.none .bar i{background:#5b7285;}
+.res{border-radius:14px;padding:12px;margin-bottom:12px;border:1px solid;}
+.res h3{margin:0 0 8px;font-size:13.5px;display:flex;align-items:center;gap:6px;}
+.res .row{font-size:12.5px;line-height:1.85;color:#cfe6f7;}
+.res .row b{color:#fff;}
+.teal{background:rgba(45,212,191,.10);border-color:rgba(45,212,191,.45);}
+.teal h3{color:#5ef0cf;}
+.rose{background:rgba(255,92,138,.10);border-color:rgba(255,92,138,.5);}
+.rose h3{color:#ff8fae;}
+.indigo{background:rgba(124,140,255,.12);border-color:rgba(124,140,255,.5);}
+.indigo h3{color:#a9b6ff;}
+.ice{background:rgba(94,179,255,.10);border-color:rgba(94,179,255,.45);}
+.ice h3{color:#a8d8ff;}
+.tag{font-size:10.5px;padding:2px 7px;border-radius:20px;border:1px solid currentColor;opacity:.9;}
+.rem{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.rem div{text-align:center;border-radius:10px;padding:8px 4px;background:rgba(255,255,255,.05);border:1px solid rgba(94,179,255,.2);}
+.rem .k{font-size:11.5px;color:#8fb6d6;}
+.rem .v{font-size:13.5px;font-weight:700;color:#eaf6ff;margin-top:3px;}
+.rem .zero .v{color:#5b7285;}
+.note{font-size:11.5px;color:#9fc6e2;line-height:1.7;margin-top:8px;border-top:1px dashed rgba(94,179,255,.25);padding-top:8px;}
+footer{text-align:center;font-size:11px;color:#6d8ba5;padding:6px 0 2px;}
+@media (max-width:360px){h1{font-size:18px;}.g3{gap:6px;}.bear{min-width:74px;flex-basis:74px;}
+  .merge{gap:9px;}.merge .col.right{padding-left:9px;}}
+@media (max-width:300px){.merge{grid-template-columns:1fr;}.merge .col.right{border-left:none;padding-left:0;border-top:1px dashed rgba(94,179,255,.28);padding-top:10px;}}
+</style>
+</head>
+<body>
+<div class="snow" id="snow"></div>
+<div class="wrap">
+  <header>
+    <h1>无尽冬日打熊编队计算</h1>
+    <div class="sign">✦ by酱油瓶扶一下 ✦</div>
+  </header>
+
+  <!-- 1+2 识别 + 当前兵力（合并栏） -->
+  <section class="card">
+    <div class="ttl"><i></i>兵力录入<small>识别 / 手动</small></div>
+    <div class="merge">
+      <div class="col left">
+        <h4><i></i>快速识别兵力</h4>
+        <textarea id="ocr" placeholder="截图OCR兵力粘贴此处，自动识别" autocomplete="off"></textarea>
+        <div class="tip" id="ocrTip">支持「盾兵 / 矛兵 / 射手（射兵）」后的数字，兼容千分位逗号。</div>
+      </div>
+      <div class="col right">
+        <h4><i></i>当前兵力数（可手动输入）</h4>
+        <div class="fld"><label>盾兵</label><input type="number" id="sShield" value="195153" inputmode="numeric"></div>
+        <div class="fld"><label>矛兵</label><input type="number" id="sSpear" value="162310" inputmode="numeric"></div>
+        <div class="fld"><label>射兵</label><input type="number" id="sArcher" value="323984" inputmode="numeric"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 容量参数 -->
+  <section class="card">
+    <div class="ttl"><i></i>队列容量参数</div>
+    <div class="g2">
+      <div class="fld"><label>英雄队列基础容量</label><input type="number" id="cHero" value="135210" inputmode="numeric"></div>
+      <div class="fld"><label>纯兵队伍基础容量</label><input type="number" id="cPure" value="94800" inputmode="numeric"></div>
+      <div class="fld"><label>专家技能</label><input type="number" id="cExpert" value="21000" inputmode="numeric"></div>
+      <div class="fld"><label>宠物技能</label><input type="number" id="cPet" value="7500" inputmode="numeric"></div>
+    </div>
+    <div class="box">
+      <div class="mini"><div class="k">英雄队列容量</div><div class="v" id="vHero">163,710</div><div class="s">基础 + 专家 + 宠物</div></div>
+      <div class="mini"><div class="k">纯兵队列容量</div><div class="v" id="vPure">123,300</div><div class="s">基础 + 专家 + 宠物</div></div>
+    </div>
+  </section>
+
+  <!-- 4 队列打熊英雄情况 -->
+  <section class="card">
+    <div class="ttl"><i></i>队列打熊英雄情况</div>
+    <div class="chips" id="missBox">
+      <label class="chip"><input type="radio" name="miss" value="456">4-5-6队缺英雄</label>
+      <label class="chip on"><input type="radio" name="miss" value="56" checked>5-6队缺英雄</label>
+      <label class="chip"><input type="radio" name="miss" value="6">只6队缺英雄</label>
+    </div>
+    <div class="tip" id="missTip"></div>
+  </section>
+
+  <!-- 5 编队比例 -->
+  <section class="card">
+    <div class="ttl"><i></i>编队比例（盾 : 矛 : 射）</div>
+    <div class="chips" id="ratioBox">
+      <label class="chip on"><input type="radio" name="ratio" value="1:1:8" checked>1:1:8</label>
+      <label class="chip"><input type="radio" name="ratio" value="5:5:90">5:5:90</label>
+      <label class="chip"><input type="radio" name="ratio" value="1:3:6">1:3:6</label>
+      <label class="chip"><input type="radio" name="ratio" value="6:22:72">6:22:72</label>
+      <label class="chip"><input type="radio" name="ratio" value="1:2:7">1:2:7</label>
+    </div>
+    <div class="g3" style="margin-top:10px;">
+      <div class="fld"><label>盾份数</label><input type="number" id="rS" value="1" min="0" inputmode="numeric"></div>
+      <div class="fld"><label>矛份数</label><input type="number" id="rP" value="1" min="0" inputmode="numeric"></div>
+      <div class="fld"><label>射份数</label><input type="number" id="rA" value="8" min="0" inputmode="numeric"></div>
+    </div>
+    <div class="box">
+      <div class="mini"><div class="k">英雄队列 · 满编需求</div><div class="v" id="reqHero" style="font-size:13px;">—</div><div class="s" id="capHeroS">—</div></div>
+      <div class="mini"><div class="k">纯兵队列 · 满编需求</div><div class="v" id="reqPure" style="font-size:13px;">—</div><div class="s" id="capPureS">—</div></div>
+    </div>
+  </section>
+
+  <!-- 6 打熊编队汇总表 -->
+  <section class="card">
+    <div class="ttl"><i></i>打熊编队汇总表</div>
+    <div class="legend">
+      <span><em class="lfh"></em>英雄满编</span>
+      <span><em class="lfp"></em>兵队满编</span>
+      <span><em class="lph"></em>英雄残编</span>
+      <span><em class="lpp"></em>兵队残编</span>
+      <span><em class="ln"></em>未编队</span>
+    </div>
+    <div class="bearRow" id="bearRow"></div>
+    <div class="note" id="bearNote"></div>
+  </section>
+
+  <div id="result"></div>
+  <footer>冰雪末世 · 编队推演 · 结果随输入实时刷新</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const fmt=n=>(Math.max(0,Math.round(n||0))).toLocaleString('en-US');
+const num=(id,def)=>{const v=parseInt(String($(id).value).replace(/[^\d]/g,''),10);return isNaN(v)?def:v;};
+const pc=v=>{const s=(v||0).toFixed(1);return s.endsWith('.0')?s.slice(0,-2):s;};
+
+/* ---------- 飘雪 ---------- */
+(function snow(){
+  const box=$('snow');let h='';
+  for(let i=0;i<46;i++){
+    const s=(Math.random()*2.6+1.2).toFixed(1);
+    h+=`<span class="flake" style="left:${(Math.random()*100).toFixed(2)}%;width:${s}px;height:${s}px;`+
+       `--o:${(Math.random()*.6+.25).toFixed(2)};--dx:${(Math.random()*60-30).toFixed(0)}px;`+
+       `animation-duration:${(Math.random()*9+8).toFixed(1)}s;animation-delay:-${(Math.random()*12).toFixed(1)}s;"></span>`;
+  }
+  box.innerHTML=h;
+})();
+
+/* ---------- 文本识别 ---------- */
+function parseTroops(text){
+  const t=String(text||'').replace(/\s+/g,'');
+  const grab=kws=>{
+    for(const kw of kws){
+      const i=t.indexOf(kw);if(i<0)continue;
+      const m=t.slice(i+kw.length).match(/^[^\d]{0,8}?(\d{1,3}(?:[,，]\d{3})+|\d+)/);
+      if(m)return parseInt(m[1].replace(/[,，]/g,''),10);
+    }
+    return null;
+  };
+  return {shield:grab(['盾兵']),spear:grab(['矛兵']),archer:grab(['射手','射兵'])};
+}
+function applyOcr(){
+  const r=parseTroops($('ocr').value);
+  const found=[];
+  if(r.shield!=null){$('sShield').value=r.shield;found.push('盾 '+fmt(r.shield));}
+  if(r.spear!=null){$('sSpear').value=r.spear;found.push('矛 '+fmt(r.spear));}
+  if(r.archer!=null){$('sArcher').value=r.archer;found.push('射 '+fmt(r.archer));}
+  const tip=$('ocrTip');
+  if(found.length){tip.innerHTML='<span class="ok">✔ 识别成功：</span>'+found.join(' · ')+'（已自动填入）';}
+  else{tip.innerHTML='<span class="bad">✘ 未识别到兵力，请确认文本含「盾兵/矛兵/射手」及数字</span>';}
+  calc();
+}
+
+/* ---------- 满编需求 ---------- */
+function fullReq(cap,rs,rp,ra){
+  const tot=rs+rp+ra;
+  let sh=Math.floor(cap*rs/tot),sp=Math.floor(cap*rp/tot),ar=Math.floor(cap*ra/tot);
+  let rem=cap-sh-sp-ar;
+  while(rem>0){
+    if(ra>0){ar++;}else if(rp>0){sp++;}else{sh++;}
+    rem--;
+  }
+  return {sh,sp,ar,cap};
+}
+function gcd(a,b){while(b){const t=a%b;a=b;b=t;}return a;}
+function ratioStr(a,b,c){
+  if(a>0&&b>0&&c>0){const g=gcd(gcd(a,b),c);return (a/g)+' : '+(b/g)+' : '+(c/g);}
+  return a+' : '+b+' : '+c;
+}
+
+/* ---------- 核心推演 ---------- */
+function simulate(){
+  const heroCap=num('cHero',0)+num('cExpert',0)+num('cPet',0);
+  const pureCap=num('cPure',0)+num('cExpert',0)+num('cPet',0);
+  const miss=document.querySelector('input[name=miss]:checked').value;
+  const missSet=miss==='456'?[4,5,6]:miss==='56'?[5,6]:[6];
+  const rs=num('rS',0),rp=num('rP',0),ra=num('rA',0);
+  const state={heroCap,pureCap,rs,rp,ra,missSet,ok:true,err:'',full:[],special:[],nonstd:null,
+               left:{sh:0,sp:0,ar:0},stop:''};
+  if(rs+rp+ra<=0){state.ok=false;state.err='比例份数不能全为 0，请至少填写一项。';return state;}
+  if(heroCap<=0||pureCap<=0){state.ok=false;state.err='队列容量需大于 0。';return state;}
+
+  let sh=num('sShield',0),sp=num('sSpear',0),ar=num('sArcher',0);
+  const reqHero=fullReq(heroCap,rs,rp,ra),reqPure=fullReq(pureCap,rs,rp,ra);
+  state.reqHero=reqHero;state.reqPure=reqPure;
+
+  for(let i=1;i<=6;i++){
+    if(ar<=0){state.stop='射兵已耗尽，停止编排';break;}
+    if(sh+sp+ar<=0){state.stop='兵力已耗尽，停止编排';break;}
+    const isPure=missSet.indexOf(i)>=0;
+    const cap=isPure?pureCap:heroCap;
+    const req=isPure?reqPure:reqHero;
+
+    /* ① 满编 */
+    if(sh>=req.sh&&sp>=req.sp&&ar>=req.ar){
+      sh-=req.sh;sp-=req.sp;ar-=req.ar;
+      state.full.push({i,type:isPure?'pure':'hero',cap,sh:req.sh,sp:req.sp,ar:req.ar});
+      continue;
+    }
+    /* ② 特殊编队 */
+    if(ar>0&&(sh<req.sh||sp<req.sp)){
+      const bSh=Math.min(sh,req.sh),bSp=Math.min(sp,req.sp);
+      let room=cap-bSh-bSp;
+      const useAr=Math.min(ar,room);ar-=useAr;room-=useAr;
+      let exSh=0,exSp=0;
+      if(room>0){exSh=Math.min(sh-bSh,room);room-=exSh;}
+      if(room>0){exSp=Math.min(sp-bSp,room);room-=exSp;}
+      sh-=(bSh+exSh);sp-=(bSp+exSp);
+      const tSh=bSh+exSh,tSp=bSp+exSp;
+      if(tSh+tSp+useAr<=0){state.stop='兵力不足，无法继续编队';break;}
+      state.special.push({i,type:isPure?'pure':'hero',cap,sh:tSh,sp:tSp,ar:useAr,
+        shortSh:Math.max(0,req.sh-bSh),shortSp:Math.max(0,req.sp-bSp),
+        exSh,exSp,unfilled:Math.max(0,room)});
+      if(ar<=0){state.stop='第 '+i+' 队后射兵归零，停止编排';break;}
+      continue;
+    }
+    /* ③ 整数比例非标编队 */
+    if(ar>0&&sh>=req.sh&&sp>=req.sp&&ar<req.ar){
+      let pct=Math.floor(ar/cap*100);if(pct>99)pct=99;
+      const useAr=Math.min(ar,Math.floor(cap*pct/100));
+      const useSh=Math.min(sh,req.sh);
+      let room=cap-useAr-useSh;
+      const useSp=Math.min(sp,room);room-=useSp;
+      const exSh=Math.min(sh-useSh,room);room-=exSh;
+      sh-=(useSh+exSh);sp-=useSp;ar-=useAr;
+      state.nonstd={i,type:isPure?'pure':'hero',cap,pct,sh:useSh+exSh,sp:useSp,ar:useAr,
+        baseSh:useSh,exSh,unfilled:Math.max(0,room)};
+      state.stop='第 '+i+' 队为整数比例非标编队，编排结束';
+      break;
+    }
+    state.stop='兵力不足，停止编排';break;
+  }
+  if(!state.stop)state.stop='已达 6 队上限，编排结束';
+  state.left={sh,sp,ar};
+  return state;
+}
+
+/* ---------- 打熊汇总表 ---------- */
+function bearSlots(st){
+  const slots=[];
+  for(let i=1;i<=6;i++){
+    const f=st.full.find(t=>t.i===i);
+    if(f){slots.push({i,kind:'full',type:f.type,cap:f.cap,sh:f.sh,sp:f.sp,ar:f.ar});continue;}
+    const s=st.special.find(t=>t.i===i);
+    if(s){slots.push({i,kind:'part',type:s.type,cap:s.cap,sh:s.sh,sp:s.sp,ar:s.ar,tag:'特殊'});continue;}
+    const n=st.nonstd&&st.nonstd.i===i?st.nonstd:null;
+    if(n){slots.push({i,kind:'part',type:n.type,cap:n.cap,sh:n.sh,sp:n.sp,ar:n.ar,tag:'非标'});continue;}
+    slots.push({i,kind:'none'});
+  }
+  return slots;
+}
+function renderBear(st){
+  const row=$('bearRow');
+  if(!st.ok){row.innerHTML='';$('bearNote').textContent='';return;}
+  const slots=bearSlots(st);
+  let h='',fullN=0,partN=0,out=0;
+  slots.forEach(t=>{
+    if(t.kind==='none'){
+      h+='<div class="bear none"><div class="bn">熊'+t.i+'</div>'+
+         '<div class="bl"><span>盾</span><b>—</b></div>'+
+         '<div class="bl"><span>矛</span><b>—</b></div>'+
+         '<div class="bl"><span>射</span><b>—</b></div>'+
+         '<div class="bar"><i style="width:0%"></i></div><div class="bt">未编队</div></div>';
+      return;
+    }
+    const total=t.sh+t.sp+t.ar;
+    const pS=t.sh/total*100,pP=t.sp/total*100,pA=t.ar/total*100;
+    const fill=Math.min(100,total/t.cap*100);
+    const cls=(t.kind==='full'?'f':'p')+(t.type==='hero'?'h':'p');
+    if(t.kind==='full')fullN++;else partN++;
+    out+=total;
+    h+='<div class="bear '+cls+'">'+
+       '<div class="bg '+(t.type==='hero'?'hero':'pure')+'">'+(t.type==='hero'?'英':'兵')+'</div>'+
+       '<div class="bn">熊'+t.i+'</div>'+
+       '<div class="bl"><span>盾</span><b>'+pc(pS)+'%</b></div>'+
+       '<div class="bl"><span>矛</span><b>'+pc(pP)+'%</b></div>'+
+       '<div class="bl"><span>射</span><b>'+pc(pA)+'%</b></div>'+
+       '<div class="bar"><i style="width:'+fill.toFixed(1)+'%"></i></div>'+
+       '<div class="bt">'+fmt(total)+'</div></div>';
+  });
+  row.innerHTML=h;
+  const tgt=st.rs+st.rp+st.ra;
+  const tp=[st.rs/tgt*100,st.rp/tgt*100,st.ra/tgt*100];
+  $('bearNote').innerHTML='目标比例：盾 <b>'+pc(tp[0])+'%</b> · 矛 <b>'+pc(tp[1])+'%</b> · 射 <b>'+pc(tp[2])+'%</b>'+
+    ' ｜ 满编 <b>'+fullN+'</b> 队 · 残编 <b>'+partN+'</b> 队 · 总出兵 <b>'+fmt(out)+'</b>（'+st.stop+'）';
+}
+
+/* ---------- 明细渲染 ---------- */
+function render(st){
+  const R=$('result');
+  renderBear(st);
+  if(!st.ok){R.innerHTML='<section class="card"><div class="ttl"><i></i>提示</div><div class="tip bad">'+st.err+'</div></section>';return;}
+  let h='';
+
+  const groups={hero:[],pure:[]};
+  st.full.forEach(t=>groups[t.type].push(t));
+  ['hero','pure'].forEach(k=>{
+    const g=groups[k];if(!g.length)return;
+    const t0=g[0],n=g.length;
+    const name=k==='hero'?'英雄队列':'兵队（无英雄）';
+    h+='<section class="res teal"><h3>满编队列 · '+name+' <span class="tag">'+n+' 队</span></h3>'+
+       '<div class="row">队号：第 '+g.map(t=>t.i).join('、')+' 队 ｜ 单队容量 <b>'+fmt(t0.cap)+'</b></div>'+
+       '<div class="row">盾兵 '+fmt(t0.sh)+' × '+n+' = <b>'+fmt(t0.sh*n)+'</b></div>'+
+       '<div class="row">矛兵 '+fmt(t0.sp)+' × '+n+' = <b>'+fmt(t0.sp*n)+'</b></div>'+
+       '<div class="row">射兵 '+fmt(t0.ar)+' × '+n+' = <b>'+fmt(t0.ar*n)+'</b></div>'+
+       '<div class="row">合计 '+fmt(t0.cap)+' × '+n+' = <b>'+fmt(t0.cap*n)+'</b></div></section>';
+  });
+
+  st.special.forEach(t=>{
+    const name=t.type==='hero'?'英雄队列':'兵队（无英雄）';
+    const p=x=>(x/t.cap*100).toFixed(1)+'%';
+    const nt=[];
+    if(t.shortSh)nt.push('盾兵缺 '+fmt(t.shortSh));
+    if(t.shortSp)nt.push('矛兵缺 '+fmt(t.shortSp));
+    let s=nt.length?('盾/矛不足满编（'+nt.join('、')+'），射兵补足 '+fmt(t.ar)+' 位'):'射兵补足剩余容量 '+fmt(t.ar)+' 位';
+    if(t.exSh)s+='，射兵耗尽后盾兵补位 '+fmt(t.exSh);
+    if(t.exSp)s+='，矛兵补位 '+fmt(t.exSp);
+    if(t.unfilled)s+='，仍有 '+fmt(t.unfilled)+' 位空缺';
+    h+='<section class="res rose"><h3>第 '+t.i+' 队 · 特殊编队 <span class="tag">'+name+' · '+fmt(t.cap)+'</span></h3>'+
+       '<div class="row">盾兵 <b>'+fmt(t.sh)+'</b>（'+p(t.sh)+'） 矛兵 <b>'+fmt(t.sp)+'</b>（'+p(t.sp)+'） 射兵 <b>'+fmt(t.ar)+'</b>（'+p(t.ar)+'）</div>'+
+       '<div class="row">实际比例 盾 : 矛 : 射 = <b>'+ratioStr(t.sh,t.sp,t.ar)+'</b></div>'+
+       '<div class="row">总兵力 <b>'+fmt(t.sh+t.sp+t.ar)+'</b> / '+fmt(t.cap)+'</div>'+
+       '<div class="note">'+s+'</div></section>';
+  });
+
+  if(st.nonstd){
+    const t=st.nonstd,name=t.type==='hero'?'英雄队列':'兵队（无英雄）';
+    const p=x=>(x/t.cap*100).toFixed(1)+'%';
+    let s='射兵不足以满编，占比去尾取整为 <b>'+t.pct+'%</b> → 投入 '+fmt(t.ar)+'；盾兵按满编投入 '+fmt(t.baseSh)+
+          '；剩余容量优先由矛兵补足 '+fmt(t.sp);
+    if(t.exSh)s+='，再由盾兵补位 '+fmt(t.exSh);
+    if(t.unfilled)s+='，仍有 '+fmt(t.unfilled)+' 位空缺';
+    h+='<section class="res indigo"><h3>第 '+t.i+' 队 · 整数比例非标编队 <span class="tag">'+name+' · '+fmt(t.cap)+'</span></h3>'+
+       '<div class="row">射兵取整占比 <b>'+t.pct+'%</b></div>'+
+       '<div class="row">盾兵 <b>'+fmt(t.sh)+'</b>（'+p(t.sh)+'） 矛兵 <b>'+fmt(t.sp)+'</b>（'+p(t.sp)+'） 射兵 <b>'+fmt(t.ar)+'</b>（'+p(t.ar)+'）</div>'+
+       '<div class="row">实际比例 盾 : 矛 : 射 = <b>'+ratioStr(t.sh,t.sp,t.ar)+'</b></div>'+
+       '<div class="row">总兵力 <b>'+fmt(t.sh+t.sp+t.ar)+'</b> / '+fmt(t.cap)+'</div>'+
+       '<div class="note">'+s+'</div></section>';
+  }
+
+  const L=st.left,z=v=>v<=0?' zero':'';
+  h+='<section class="res ice"><h3>剩余兵力</h3><div class="rem">'+
+     '<div class="'+z(L.sh)+'"><div class="k">盾兵</div><div class="v">'+fmt(L.sh)+'</div></div>'+
+     '<div class="'+z(L.sp)+'"><div class="k">矛兵</div><div class="v">'+fmt(L.sp)+'</div></div>'+
+     '<div class="'+z(L.ar)+'"><div class="k">射兵</div><div class="v">'+fmt(L.ar)+'</div></div>'+
+     '</div><div class="note">'+st.stop+'</div></section>';
+
+  if(!st.full.length&&!st.special.length&&!st.nonstd){
+    h+='<section class="card"><div class="tip bad">当前兵力不足以编出任何一队，请检查输入。</div></section>';
+  }
+  R.innerHTML=h;
+}
+
+/* ---------- 主流程 ---------- */
+function calc(){
+  const st=simulate();
+  $('vHero').textContent=fmt(st.heroCap);
+  $('vPure').textContent=fmt(st.pureCap);
+  if(st.ok){
+    $('reqHero').textContent='盾 '+fmt(st.reqHero.sh)+' / 矛 '+fmt(st.reqHero.sp)+' / 射 '+fmt(st.reqHero.ar);
+    $('reqPure').textContent='盾 '+fmt(st.reqPure.sh)+' / 矛 '+fmt(st.reqPure.sp)+' / 射 '+fmt(st.reqPure.ar);
+    $('capHeroS').textContent='单队总容量 '+fmt(st.heroCap);
+    $('capPureS').textContent='单队总容量 '+fmt(st.pureCap);
+    const ms=st.missSet;
+    $('missTip').innerHTML='缺英雄队：<b>第 '+ms.join('、')+' 队</b>（使用兵队容量 '+fmt(st.pureCap)+'），其余队使用英雄容量 '+fmt(st.heroCap);
+  }
+  render(st);
+}
+
+/* ---------- 事件绑定 ---------- */
+document.querySelectorAll('input[type=number]').forEach(el=>{
+  el.addEventListener('focus',()=>el.select());
+  el.addEventListener('input',calc);
+});
+document.querySelectorAll('#missBox .chip, #ratioBox .chip').forEach(l=>{
+  l.addEventListener('click',()=>{
+    document.querySelectorAll('#'+l.parentNode.id+' .chip').forEach(c=>c.classList.remove('on'));
+    l.classList.add('on');
+    if(l.parentNode.id==='ratioBox'){
+      const v=l.querySelector('input').value.split(':');
+      $('rS').value=v[0];$('rP').value=v[1];$('rA').value=v[2];
+    }
+    setTimeout(calc,0);
+  });
+});
+document.querySelectorAll('input[name=miss]').forEach(r=>r.addEventListener('change',calc));
+
+let timer=null;
+$('ocr').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(applyOcr,400);});
+$('ocr').addEventListener('paste',()=>setTimeout(applyOcr,30));
+$('ocr').addEventListener('focus',()=>{const el=$('ocr');setTimeout(()=>el.select(),0);});
+
+calc();
+})();
+</script>
+</body>
+</html>
